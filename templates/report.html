@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Отчёт по анализу договора</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #2c3e50; }
+        .summary { background: #f8f9fa; padding: 10px; border-left: 4px solid #007bff; margin: 20px 0; }
+        .issue { margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .risk-high { border-color: #dc3545; background-color: #fff5f5; }
+        .risk-medium { border-color: #ffc107; background-color: #fffbeb; }
+        .risk-low { border-color: #28a745; background-color: #f0fdf4; }
+        .quote { font-style: italic; color: #555; }
+        .explanation, .suggestion { margin-top: 8px; }
+        .footer { margin-top: 40px; font-size: 0.9em; color: #777; }
+    </style>
+</head>
+<body>
+    <h1>Анализ договора</h1>
+    <div class="summary">{{ summary }}</div>
+    <p><strong>Безопасность договора:</strong> {{ score }}/100</p>
+
+    {% if issues %}
+        <h2>Выявленные риски</h2>
+        {% for issue in issues %}
+            <div class="issue risk-{{ issue.risk }}">
+                <div class="quote">«{{ issue.quote }}»</div>
+                <div class="explanation"><strong>Пояснение:</strong> {{ issue.explanation }}</div>
+                <div class="suggestion"><strong>Рекомендация:</strong> {{ issue.suggestion }}</div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Критических рисков не обнаружено. Договор соответствует рекомендациям.</p>
+    {% endif %}
+
+    <div class="footer">
+        Сгенерировано: {{ timestamp }}<br>
+        Contract Clause Detector — помощник для фрилансеров и малого бизнеса
+    </div>
+</body>
+</html>

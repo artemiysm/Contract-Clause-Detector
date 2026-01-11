@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract Clause Detector — проверь договор за 30 секунд</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            tailwind.config = { darkMode: 'class' };
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <style>
+        .spinner {
+            width: 24px; height: 24px;
+            border: 3px solid #e5e7eb; border-top: 3px solid #3b82f6;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .score-bar { 
+            height: 6px; border-radius: 3px; 
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">
+                Contract Clause Detector
+            </h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400">
+                Загрузи договор — получи разбор рисков за 30 секунд
+            </p>
+        </header>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700">
+            <!-- Выбор модели -->
+            <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
+                        data-model="auto">
+                    <div class="font-medium">Авто</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Groq → Local</div>
+                </button>
+                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
+                        data-model="groq">
+                    <div class="font-medium text-blue-700 dark:text-blue-400">Groq</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Быстро, дёшево</div>
+                </button>
+                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
+                        data-model="local">
+                    <div class="font-medium text-green-700 dark:text-green-400">Локально</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Без API, бесплатно</div>
+                </button>
+            </div>
+            <input type="hidden" id="selected-model" name="model" value="auto">
+
+            <!-- Зона загрузки -->
+            <div id="upload-area" 
+                 class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition"
+                 onclick="document.getElementById('file-input').click()">
+                <svg xmlns="http://www.w3.org/2000/svg" 
+                     class="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" 
+                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p class="text-gray-600 dark:text-gray-400 mb-2"><strong>Перетащи PDF или DOCX</strong></p>
+                <p class="text-sm text-gray-500 dark:text-gray-500">Поддержка до 10 МБ</p>
+                <input type="file" id="file-input" class="hidden" accept=".pdf,.docx" onchange="uploadFile()">
+            </div>
+
+            <!-- Спиннер -->
+            <div id="spinner" class="hidden text-center mt-6">
+                <div class="spinner mx-auto"></div>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">Анализируем договор...</p>
+            </div>
+
+            <!-- Результат -->
+            <div id="result" class="mt-6 hidden">
+                <!-- Заголовок + рейтинг -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Результат анализа</h2>
+                    <span id="model-badge" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"></span>
+                </div>
+
+                <!-- Рейтинг -->
+                <div id="score-section" class="mb-6 hidden">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Безопасность договора</span>
+                        <span id="score-value" class="text-sm font-bold text-gray-900 dark:text-white">85/100</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                        <div id="score-bar" class="score-bar bg-green-500"></div>
+                    </div>
+                </div>
+
+                <!-- Итог -->
+                <div id="summary" class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 p-4 rounded-lg mb-6"></div>
+
+                <!-- Риски -->
+                <div id="issues-list"></div>
+
+                <!-- Кнопки -->
+                <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                    <button onclick="downloadPDF()" 
+                            class="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Скачать PDF-отчёт
+                    </button>
+                    <button onclick="location.reload()" 
+                            class="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-lg transition">
+                        Другой договор
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center text-gray-500 dark:text-gray-500 text-sm mt-8">
+            <p>Данный сервис не является юридической консультацией. Рекомендуем согласовывать договоры со специалистом.</p>
+        </footer>
+    </div>
+
+    <script>
+        // ГЛОБАЛЬНАЯ ПЕРЕМЕННАЯ ДЛЯ ХРАНЕНИЯ РЕЗУЛЬТАТА 
+        let analysisResult = null;
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Переключение модели
+        document.querySelectorAll('.model-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.model-btn').forEach(b => {
+                    b.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
+                    b.classList.add('border-gray-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
+                });
+                this.classList.remove('border-gray-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
+                this.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
+                document.getElementById('selected-model').value = this.dataset.model;
+            });
+        });
+
+        // Копирование текста
+        function copyText(btn) {
+            const code = btn.previousElementSibling;
+            const text = code.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const original = btn.textContent;
+                btn.textContent = "Скопировано";
+                setTimeout(() => btn.textContent = original, 2000);
+            });
+        }
+
+        // Загрузка и анализ
+        async function uploadFile() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model', document.getElementById('selected-model').value);
+
+            document.getElementById('upload-area').classList.add('hidden');
+            document.getElementById('spinner').classList.remove('hidden');
+
+            try {
+                const response = await fetch('/analyze', { method: 'POST', body: formData });
+                document.getElementById('spinner').classList.add('hidden');
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Ошибка: ' + data.error);
+                    location.reload();
+                    return;
+                }
+
+                // СОХРАНЯЕМ РЕЗУЛЬТАТ ДЛЯ PDF
+                analysisResult = data;
+
+                // Отображаем результат
+                document.getElementById('result').classList.remove('hidden');
+                document.getElementById('summary').innerText = data.summary;
+
+                // Бейдж модели
+                const sourceLabels = { 'groq': 'Groq', 'local': 'Локальный' };
+                document.getElementById('model-badge').innerText = sourceLabels[data.meta?.source] || 'Авто';
+
+                // Рейтинг
+                const score = data.meta?.score ?? 100;
+                const scoreEl = document.getElementById('score-value');
+                const barEl = document.getElementById('score-bar');
+                const sectionEl = document.getElementById('score-section');
+                scoreEl.textContent = `${score}/100`;
+                barEl.style.width = `${score}%`;
+                barEl.className = 'score-bar rounded-full ' + 
+                    (score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500');
+                sectionEl.classList.remove('hidden');
+
+                // Риски
+                const issuesList = document.getElementById('issues-list');
+                issuesList.innerHTML = '';
+
+                if (data.issues?.length > 0) {
+                    data.issues.forEach(issue => {
+                        let bgClass, borderClass, textColor, badgeColor;
+                        switch (issue.risk) {
+                            case 'high':
+                                bgClass = 'bg-red-100 dark:bg-red-900/30';
+                                borderClass = 'border-l-4 border-red-500';
+                                textColor = 'text-red-800 dark:text-red-200';
+                                badgeColor = 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200';
+                                break;
+                            case 'medium':
+                                bgClass = 'bg-orange-100 dark:bg-orange-900/30';
+                                borderClass = 'border-l-4 border-orange-500';
+                                textColor = 'text-orange-800 dark:text-orange-200';
+                                badgeColor = 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200';
+                                break;
+                            default:
+                                bgClass = 'bg-green-100 dark:bg-green-900/30';
+                                borderClass = 'border-l-4 border-green-500';
+                                textColor = 'text-green-800 dark:text-green-200';
+                                badgeColor = 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200';
+                        }
+
+                        const riskLabel = issue.risk === 'high' ? 'Опасно' : issue.risk === 'medium' ? 'Спорно' : 'Нейтрально';
+                        const card = document.createElement('div');
+                        card.className = `p-4 mb-4 rounded-lg ${bgClass} ${borderClass}`;
+                        card.innerHTML = `
+                            <div class="flex items-start">
+                                <span class="px-2 py-1 text-xs font-bold rounded mr-2 ${badgeColor}">${escapeHtml(riskLabel)}</span>
+                                <div class="flex-1">
+                                    <p class="font-medium mb-2 ${textColor}">«${escapeHtml(issue.quote)}»</p>
+                                    <p class="text-gray-700 dark:text-gray-300 mb-3">${escapeHtml(issue.explanation)}</p>
+                                    ${issue.suggestion ? `
+                                        <div class="flex items-start">
+                                            <span class="mt-0.5 text-blue-700 dark:text-blue-400 mr-2">➤</span>
+                                            <code class="bg-gray-100 dark:bg-gray-700 text-sm p-2 rounded break-all flex-1">${escapeHtml(issue.suggestion)}</code>
+                                            <button class="ml-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400" onclick="copyText(this)">📋</button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                        issuesList.appendChild(card);
+                    });
+                } else {
+                    issuesList.innerHTML = `
+                        <div class="bg-green-100 dark:bg-green-900/30 border-l-4 border-green-500 p-4 rounded-lg">
+                            <p class="text-green-800 dark:text-green-200 font-medium">✅ Договор безопасен</p>
+                            <p class="text-sm mt-1">Критических рисков не найдено.</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error("Ошибка:", e);
+                document.getElementById('spinner').classList.add('hidden');
+                document.getElementById('upload-area').classList.remove('hidden');
+                alert('Ошибка сети: ' + (e.message || 'Неизвестно'));
+            }
+        }
+
+        // ФУНКЦИЯ СКАЧИВАНИЯ PDF 
+        function downloadPDF() {
+            if (!analysisResult) {
+                alert('Нет данных для генерации PDF. Сначала загрузите и проанализируйте договор.');
+                return;
+            }
+
+            fetch('/download-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(analysisResult)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                return response.text().then(text => { throw new Error(text || 'Ошибка при генерации PDF'); });
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'analiz_dogovora.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            })
+            .catch(err => {
+                console.error('Ошибка PDF:', err);
+                alert('Не удалось скачать PDF: ' + (err.message || 'Неизвестная ошибка'));
+            });
+        }
+
+        // Drag & drop
+        const uploadArea = document.getElementById('upload-area');
+        ['dragover', 'dragenter'].forEach(ev => {
+            uploadArea.addEventListener(ev, e => {
+                e.preventDefault();
+                uploadArea.classList.add('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/10');
+            });
+        });
+        ['dragleave', 'dragend'].forEach(ev => {
+            uploadArea.addEventListener(ev, () => {
+                uploadArea.classList.remove('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/10');
+            });
+        });
+        uploadArea.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/10');
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                document.getElementById('file-input').files = files;
+                uploadFile();
+            }
+        });
+    </script>
+</body>
+</html>
