@@ -48,15 +48,15 @@
 
 ### 1. Клонируйте репозиторий
 --- 
-git clone https://github.com/ваш-логин/contract-clause-detector.git
+> git clone https://github.com/ваш-логин/contract-clause-detector.git
 cd contract-clause-detector
 ## Установите зависимости
-pip install -r requirements.txt
+> pip install -r requirements.txt
 
 ## Запустите сервер
-- python app.py
+> python app.py
 --- 
-- Откройте в браузере: http://localhost:5001
+> Откройте в браузере: http://localhost:5001
 ### Как использовать
 - Перейдите на главную страницу.
 - Загрузите договор в формате PDF или DOCX.
