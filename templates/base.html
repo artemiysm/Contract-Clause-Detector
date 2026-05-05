@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru" class="{{ current_theme if current_theme != 'auto' else '' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Contract Detector{% endblock %}</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+    
+    <script>
+        (function() {
+            // Получаем тему из localStorage или используем 'auto'
+            const theme = localStorage.getItem('theme') || 'auto';
+            applyTheme(theme, false); // false = не сохранять ещё раз
+            
+            function applyTheme(theme, save = true) {
+                const html = document.documentElement;
+                html.classList.remove('light', 'dark');
+                
+                if (theme === 'dark') {
+                    html.classList.add('dark');
+                } else if (theme === 'light') {
+                    html.classList.add('light');
+                } else if (theme === 'auto') {
+                    // Проверяем системную тему
+                    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        html.classList.add('dark');
+                    } else {
+                        html.classList.add('light');
+                    }
+                }
+                
+                if (save) {
+                    localStorage.setItem('theme', theme);
+                }
+            }
+            
+            window.applyTheme = applyTheme;
+            
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                    const currentTheme = localStorage.getItem('theme') || 'auto';
+                    if (currentTheme === 'auto') {
+                        if (e.matches) {
+                            document.documentElement.classList.add('dark');
+                            document.documentElement.classList.remove('light');
+                        } else {
+                            document.documentElement.classList.add('light');
+                            document.documentElement.classList.remove('dark');
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
+    
+    <!-- Навигация -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('main.index') }}" class="text-xl font-bold text-gray-800 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition">
+                        <i class="fas fa-file-contract mr-2"></i>Contract Detector
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('main.dashboard') }}" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center">
+                            <i class="fas fa-home mr-1"></i>
+                            <span class="hidden sm:inline">ЛК</span>
+                        </a>
+                        <a href="{{ url_for('auth.logout') }}" class="text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition flex items-center">
+                            <i class="fas fa-sign-out-alt mr-1"></i>
+                            <span class="hidden sm:inline">Выйти</span>
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
+                            Войти
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition shadow">
+                            Регистрация
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                {% for category, message in messages %}
+                    <div class="p-4 rounded-lg mb-4 {% if category == 'error' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800{% elif category == 'success' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-800{% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800{% endif %}">
+                        <i class="fas {% if category == 'error' %}fa-exclamation-circle{% elif category == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Основной контент -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Футер -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
+        <div class="max-w-7xl mx-auto px-4 py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+            &copy; 2024 Contract Detector. Все права защищены.
+        </div>
+    </footer>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

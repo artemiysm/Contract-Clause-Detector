@@ -1,19 +1,73 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="{{ 'dark' if current_theme == 'dark' else 'light' }}">
 <head>
     <meta charset="UTF-8">
     <title>Отчёт по анализу договора</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        h1 { color: #2c3e50; }
-        .summary { background: #f8f9fa; padding: 10px; border-left: 4px solid #007bff; margin: 20px 0; }
-        .issue { margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        .risk-high { border-color: #dc3545; background-color: #fff5f5; }
-        .risk-medium { border-color: #ffc107; background-color: #fffbeb; }
-        .risk-low { border-color: #28a745; background-color: #f0fdf4; }
-        .quote { font-style: italic; color: #555; }
-        .explanation, .suggestion { margin-top: 8px; }
-        .footer { margin-top: 40px; font-size: 0.9em; color: #777; }
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #e5e7eb;
+            --summary-bg: #eff6ff;
+            --summary-border: #3b82f6;
+            --summary-text: #1e40af;
+            --issue-high-bg: #fef2f2;
+            --issue-high-border: #dc2626;
+            --issue-high-text: #991b1b;
+            --issue-medium-bg: #fffbeb;
+            --issue-medium-border: #f59e0b;
+            --issue-medium-text: #92400e;
+            --issue-low-bg: #f0fdf4;
+            --issue-low-border: #22c55e;
+            --issue-low-text: #166534;
+        }
+
+        html.dark {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --border-color: #334155;
+            --summary-bg: rgba(30, 58, 138, 0.4);
+            --summary-border: #60a5fa;
+            --summary-text: #93c5fd;
+            --issue-high-bg: rgba(220, 38, 38, 0.2);
+            --issue-high-border: #f87171;
+            --issue-high-text: #fca5a5;
+            --issue-medium-bg: rgba(249, 115, 22, 0.2);
+            --issue-medium-border: #fbbf24;
+            --issue-medium-text: #fcd34d;
+            --issue-low-bg: rgba(34, 197, 94, 0.2);
+            --issue-low-border: #4ade80;
+            --issue-low-text: #86efac;
+        }
+
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            line-height: 1.6; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        h1 { color: var(--text-color); }
+        .summary { 
+            background: var(--summary-bg); 
+            padding: 10px; 
+            border-left: 4px solid var(--summary-border); 
+            margin: 20px 0; 
+            color: var(--summary-text);
+        }
+        .issue { 
+            margin-bottom: 20px; 
+            padding: 10px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 5px; 
+        }
+        .risk-high { border-color: var(--issue-high-border); background-color: var(--issue-high-bg); }
+        .risk-medium { border-color: var(--issue-medium-border); background-color: var(--issue-medium-bg); }
+        .risk-low { border-color: var(--issue-low-border); background-color: var(--issue-low-bg); }
+        .quote { font-style: italic; color: var(--text-color); opacity: 0.9; }
+        .explanation, .suggestion { margin-top: 8px; color: var(--text-color); }
+        .footer { margin-top: 40px; font-size: 0.9em; color: var(--text-color); opacity: 0.7; }
     </style>
 </head>
 <body>

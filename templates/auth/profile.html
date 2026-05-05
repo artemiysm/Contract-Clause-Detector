@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Настройки профиля</h2>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">Управляйте данными аккаунта и предпочтениями</p>
+    </div>
+
+    <!-- Вкладки -->
+    <div class="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
+        <button class="tab-btn px-6 py-3 font-medium text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 whitespace-nowrap" 
+                data-tab="profile" onclick="switchTab('profile')">
+            <i class="fas fa-user mr-2"></i>Профиль
+        </button>
+        <button class="tab-btn px-6 py-3 font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap" 
+                data-tab="security" onclick="switchTab('security')">
+            <i class="fas fa-shield-alt mr-2"></i>Безопасность
+        </button>
+        <button class="tab-btn px-6 py-3 font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 whitespace-nowrap" 
+                data-tab="appearance" onclick="switchTab('appearance')">
+            <i class="fas fa-palette mr-2"></i>Внешний вид
+        </button>
+    </div>
+
+    <div id="tab-profile" class="tab-content">
+        <form method="POST" action="{{ url_for('auth.profile') }}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+            <div class="flex items-center gap-6">
+                <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                    {{ current_user.username[0]|upper }}
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-800 dark:text-white">{{ current_user.username }}</h4>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ current_user.email }}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Участник с {{ current_user.created_at.strftime('%B %Y') }}</p>
+                </div>
+            </div>
+
+            <hr class="border-gray-200 dark:border-gray-700">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Имя пользователя</label>
+                    <input type="text" name="username" value="{{ current_user.username }}" required
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                    <input type="email" name="email" value="{{ current_user.email }}" required
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="location.reload()" class="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    Отмена
+                </button>
+                <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition shadow">
+                    Сохранить изменения
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="tab-security" class="tab-content hidden">
+        <form method="POST" action="{{ url_for('auth.profile') }}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+            
+            <!-- Смена пароля -->
+            <div>
+                <h4 class="font-medium text-gray-800 dark:text-white mb-4 flex items-center">
+                    <i class="fas fa-key mr-2 text-indigo-500"></i>Смена пароля
+                </h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Текущий пароль</label>
+                        <input type="password" name="current_password" autocomplete="current-password"
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Новый пароль</label>
+                        <input type="password" name="new_password" autocomplete="new-password"
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Минимум 6 символов, используйте буквы и цифры</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Подтвердите новый пароль</label>
+                        <input type="password" name="confirm_password" autocomplete="new-password"
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-200 dark:border-gray-700">
+
+            <!-- 2FA -->
+            <div>
+                <h4 class="font-medium text-gray-800 dark:text-white mb-4 flex items-center">
+                    <i class="fas fa-mobile-alt mr-2 text-indigo-500"></i>Двухфакторная аутентификация
+                </h4>
+                <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-medium text-gray-800 dark:text-white">2FA через приложение</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Дополнительная защита: код из приложения при входе</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="two_factor_enabled" value="on" {{ 'checked' if current_user.two_factor_enabled }} class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 dark:bg-gray-600 rounded-full peer peer-checked:bg-indigo-600 transition"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full transition peer-checked:translate-x-5 shadow"></div>
+                        </label>
+                    </div>
+                    {% if current_user.two_factor_enabled %}
+                    <p class="mt-3 text-xs text-green-600 dark:text-green-400 flex items-center">
+                        <i class="fas fa-check-circle mr-1"></i> Двухфакторная аутентификация включена
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="location.reload()" class="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    Отмена
+                </button>
+                <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition shadow">
+                    Обновить настройки безопасности
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="tab-appearance" class="tab-content hidden">
+        <form id="appearanceForm" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Тема оформления</label>
+                <div class="grid grid-cols-3 gap-4">
+                    <!-- Светлая -->
+                    <label class="cursor-pointer group">
+                        <input type="radio" name="theme" value="light" {{ 'checked' if current_user.theme == 'light' }} class="sr-only peer">
+                        <div class="text-center py-4 px-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 peer-checked:border-indigo-600 peer-checked:ring-2 peer-checked:ring-indigo-200 dark:peer-checked:ring-indigo-800 transition bg-white dark:bg-gray-700 group-hover:border-indigo-300 dark:group-hover:border-indigo-500">
+                            <i class="fas fa-sun text-3xl text-yellow-500 mb-3"></i>
+                            <div class="text-sm font-medium text-gray-800 dark:text-white">Светлая</div>
+                        </div>
+                    </label>
+                    <!-- Тёмная -->
+                    <label class="cursor-pointer group">
+                        <input type="radio" name="theme" value="dark" {{ 'checked' if current_user.theme == 'dark' }} class="sr-only peer">
+                        <div class="text-center py-4 px-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 peer-checked:border-indigo-600 peer-checked:ring-2 peer-checked:ring-indigo-200 dark:peer-checked:ring-indigo-800 transition bg-white dark:bg-gray-700 group-hover:border-indigo-300 dark:group-hover:border-indigo-500">
+                            <i class="fas fa-moon text-3xl text-indigo-400 mb-3"></i>
+                            <div class="text-sm font-medium text-gray-800 dark:text-white">Тёмная</div>
+                        </div>
+                    </label>
+                    <!-- Системная -->
+                    <label class="cursor-pointer group">
+                        <input type="radio" name="theme" value="auto" {{ 'checked' if current_user.theme == 'auto' }} class="sr-only peer">
+                        <div class="text-center py-4 px-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 peer-checked:border-indigo-600 peer-checked:ring-2 peer-checked:ring-indigo-200 dark:peer-checked:ring-indigo-800 transition bg-white dark:bg-gray-700 group-hover:border-indigo-300 dark:group-hover:border-indigo-500">
+                            <i class="fas fa-desktop text-3xl text-blue-500 mb-3"></i>
+                            <div class="text-sm font-medium text-gray-800 dark:text-white">Системная</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Предпросмотр -->
+            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Предпросмотр</div>
+                <div id="themePreview" class="h-20 rounded-lg flex items-center justify-center font-medium transition-colors bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
+                    <i class="fas fa-palette mr-2"></i><span id="previewText">Светлая тема</span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="location.reload()" class="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    Отмена
+                </button>
+                <button type="button" onclick="saveAppearance()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition shadow">
+                    Применить тему
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // === Переключение вкладок ===
+    function switchTab(tabName) {
+        // Скрываем все вкладки
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        // Показываем выбранную
+        document.getElementById('tab-' + tabName).classList.remove('hidden');
+        
+        // Обновляем кнопки
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('text-indigo-600', 'dark:text-indigo-400', 'border-b-2', 'border-indigo-600', 'dark:border-indigo-400');
+            btn.classList.add('text-gray-500', 'dark:text-gray-400');
+        });
+        const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        activeBtn.classList.add('text-indigo-600', 'dark:text-indigo-400', 'border-b-2', 'border-indigo-600', 'dark:border-indigo-400');
+        activeBtn.classList.remove('text-gray-500', 'dark:text-gray-400');
+    }
+
+    // === Сохранение темы ===
+    function saveAppearance() {
+        const theme = document.querySelector('input[name="theme"]:checked')?.value;
+        if (!theme) return;
+        
+        // Применяем сразу (без ожидания сервера)
+        if (window.applyTheme) {
+            window.applyTheme(theme);
+        }
+        
+        updatePreview(theme);
+        
+        const formData = new FormData();
+        formData.append('theme', theme);
+        
+        fetch("{{ url_for('auth.profile') }}", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.ok ? flashMessage('Тема сохранена!', 'success') : Promise.reject())
+        .catch(() => flashMessage('Ошибка при сохранении', 'error'));
+    }
+
+    function updatePreview(theme) {
+        const preview = document.getElementById('themePreview');
+        const text = document.getElementById('previewText');
+        
+        if (theme === 'dark') {
+            preview.className = 'h-20 rounded-lg flex items-center justify-center font-medium transition-colors bg-gray-800 text-gray-200 border border-gray-600';
+            text.textContent = 'Тёмная тема';
+        } else if (theme === 'light') {
+            preview.className = 'h-20 rounded-lg flex items-center justify-center font-medium transition-colors bg-gray-100 text-gray-800 border border-gray-200';
+            text.textContent = 'Светлая тема';
+        } else {
+            preview.className = 'h-20 rounded-lg flex items-center justify-center font-medium transition-colors bg-gradient-to-r from-gray-100 to-gray-800 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600';
+            text.textContent = 'Системная тема';
+        }
+    }
+
+    // === Вспомогательная функция для сообщений ===
+    function flashMessage(text, type) {
+        // Создаём временное сообщение
+        const div = document.createElement('div');
+        div.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 
+            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+        }`;
+        div.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>${text}`;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 3000);
+    }
+
+    // === Инициализация ===
+    document.addEventListener('DOMContentLoaded', function() {
+        // Синхронизация radio с текущей темой
+        const currentTheme = localStorage.getItem('theme') || '{{ current_user.theme }}';
+        document.querySelector(`input[name="theme"][value="${currentTheme}"]`)?.closest('label')?.click();
+        updatePreview(currentTheme);
+        
+        // Обработка выбора темы по клику
+        document.querySelectorAll('input[name="theme"]').forEach(radio => {
+            radio.addEventListener('change', (e) => updatePreview(e.target.value));
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

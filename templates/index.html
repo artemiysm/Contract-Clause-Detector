@@ -1,93 +1,125 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="{{ current_theme if current_theme != 'auto' else '' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contract Clause Detector — проверь договор за 30 секунд</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            tailwind.config = { darkMode: 'class' };
-            document.documentElement.classList.add('dark');
-        }
+        tailwind.config = { darkMode: 'class' };
     </script>
+    
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || '{{ current_theme }}';
+            applyTheme(theme, false);
+            
+            function applyTheme(theme, save = true) {
+                const html = document.documentElement;
+                html.classList.remove('light', 'dark');
+                if (theme === 'dark') html.classList.add('dark');
+                else if (theme === 'light') html.classList.add('light');
+                else if (theme === 'auto') {
+                    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+                        html.classList.add('dark');
+                    else html.classList.add('light');
+                }
+                if (save) localStorage.setItem('theme', theme);
+            }
+            window.applyTheme = applyTheme;
+            
+            window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if ((localStorage.getItem('theme') || 'auto') === 'auto')
+                    applyTheme('auto', false);
+            });
+        })();
+    </script>
+    
     <style>
         .spinner {
             width: 24px; height: 24px;
-            border: 3px solid #e5e7eb; border-top: 3px solid #3b82f6;
+            border: 3px solid #e5e7eb; border-top-color: #3b82f6;
             border-radius: 50%; animation: spin 1s linear infinite;
         }
-        @keyframes spin { 
-            0% { transform: rotate(0deg); } 
-            100% { transform: rotate(360deg); } 
-        }
-        .score-bar { 
-            height: 6px; border-radius: 3px; 
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .score-bar { height: 6px; border-radius: 3px; transition: width 0.5s ease; }
+        
+        html.dark .prose { color: #e2e8f0; }
+        html.dark code { background: #334155; color: #e2e8f0; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 min-h-screen">
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 min-h-screen transition-colors duration-300">
+
     <div class="container mx-auto px-4 py-8 max-w-3xl">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">
-                Contract Clause Detector
-            </h1>
-            <p class="text-lg text-gray-600 dark:text-gray-400">
-                Загрузи договор — получи разбор рисков за 30 секунд
-            </p>
+        
+        <!-- HEADER -->
+        <header class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div class="text-center md:text-left">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">
+                    Contract Clause Detector
+                </h1>
+                <p class="text-lg text-gray-600 dark:text-gray-400">
+                    Загрузи договор — получи разбор рисков и исправленную версию
+                </p>
+            </div>
+            
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition shadow-sm">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Личный кабинет
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition shadow-sm">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14"/></svg>
+                    Войти
+                </a>
+            {% endif %}
         </header>
 
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700">
-            <!-- Выбор модели -->
+        <!-- MAIN CARD -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700 transition-colors">
+            
+            <!-- Model selector -->
             <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
-                        data-model="auto">
+                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition" data-model="auto">
                     <div class="font-medium">Авто</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">Groq → Local</div>
                 </button>
-                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
-                        data-model="groq">
+                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition" data-model="groq">
                     <div class="font-medium text-blue-700 dark:text-blue-400">Groq</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">Быстро, дёшево</div>
                 </button>
-                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
-                        data-model="local">
+                <button type="button" class="model-btn p-3 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition" data-model="local">
                     <div class="font-medium text-green-700 dark:text-green-400">Локально</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">Без API, бесплатно</div>
                 </button>
             </div>
-            <input type="hidden" id="selected-model" name="model" value="auto">
+            <input type="hidden" id="selected-model" name="model" value="local">
 
-            <!-- Зона загрузки -->
-            <div id="upload-area" 
-                 class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition"
-                 onclick="document.getElementById('file-input').click()">
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                     class="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" 
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            <!-- Upload area -->
+            <div id="upload-area" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition" onclick="document.getElementById('file-input').click()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
                 <p class="text-gray-600 dark:text-gray-400 mb-2"><strong>Перетащи PDF или DOCX</strong></p>
                 <p class="text-sm text-gray-500 dark:text-gray-500">Поддержка до 10 МБ</p>
                 <input type="file" id="file-input" class="hidden" accept=".pdf,.docx" onchange="uploadFile()">
             </div>
 
-            <!-- Спиннер -->
+            <!-- Spinner -->
             <div id="spinner" class="hidden text-center mt-6">
                 <div class="spinner mx-auto"></div>
                 <p class="mt-2 text-gray-600 dark:text-gray-400">Анализируем договор...</p>
             </div>
 
-            <!-- Результат -->
+            <!-- Result -->
             <div id="result" class="mt-6 hidden">
-                <!-- Заголовок + рейтинг -->
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Результат анализа</h2>
                     <span id="model-badge" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"></span>
                 </div>
 
-                <!-- Рейтинг -->
                 <div id="score-section" class="mb-6 hidden">
                     <div class="flex justify-between mb-1">
                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Безопасность договора</span>
@@ -98,36 +130,29 @@
                     </div>
                 </div>
 
-                <!-- Итог -->
                 <div id="summary" class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 p-4 rounded-lg mb-6"></div>
-
-                <!-- Риски -->
                 <div id="issues-list"></div>
 
-                <!-- Кнопки -->
                 <div class="mt-6 flex flex-col sm:flex-row gap-3">
-                    <button onclick="downloadPDF()" 
-                            class="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center justify-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Скачать PDF-отчёт
+                    <button onclick="downloadPDF()" class="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Скачать PDF
                     </button>
-                    <button onclick="location.reload()" 
-                            class="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-lg transition">
-                        Другой договор
+                    <button onclick="downloadFixedDocx()" class="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Скачать исправленный (.docx)
                     </button>
+                    <button onclick="location.reload()" class="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-lg transition">Другой договор</button>
                 </div>
             </div>
         </div>
 
-        <footer class="text-center text-gray-500 dark:text-gray-500 text-sm mt-8">
-            <p>Данный сервис не является юридической консультацией. Рекомендуем согласовывать договоры со специалистом.</p>
+        <footer class="text-center text-gray-500 dark:text-gray-500 text-sm mt-8 pb-8">
+            <p>Данный сервис не является юридической консультацией.</p>
         </footer>
     </div>
 
     <script>
-        // ГЛОБАЛЬНАЯ ПЕРЕМЕННАЯ ДЛЯ ХРАНЕНИЯ РЕЗУЛЬТАТА 
         let analysisResult = null;
 
         function escapeHtml(text) {
@@ -136,9 +161,9 @@
             return div.innerHTML;
         }
 
-        // Переключение модели
+        // Model buttons
         document.querySelectorAll('.model-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
+            btn.addEventListener('click', function() {
                 document.querySelectorAll('.model-btn').forEach(b => {
                     b.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
                     b.classList.add('border-gray-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
@@ -149,21 +174,17 @@
             });
         });
 
-        // Копирование текста
         function copyText(btn) {
             const code = btn.previousElementSibling;
-            const text = code.textContent;
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(code.textContent).then(() => {
                 const original = btn.textContent;
-                btn.textContent = "Скопировано";
-                setTimeout(() => btn.textContent = original, 2000);
+                btn.textContent = "✓";
+                setTimeout(() => btn.textContent = original, 1500);
             });
         }
 
-        // Загрузка и анализ
         async function uploadFile() {
-            const fileInput = document.getElementById('file-input');
-            const file = fileInput.files[0];
+            const file = document.getElementById('file-input').files[0];
             if (!file) return;
 
             const formData = new FormData();
@@ -180,153 +201,90 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
 
-                if (data.error) {
-                    alert('Ошибка: ' + data.error);
-                    location.reload();
-                    return;
-                }
+                if (data.error) { alert('Ошибка: ' + data.error); location.reload(); return; }
 
-                // СОХРАНЯЕМ РЕЗУЛЬТАТ ДЛЯ PDF
                 analysisResult = data;
-
-                // Отображаем результат
                 document.getElementById('result').classList.remove('hidden');
                 document.getElementById('summary').innerText = data.summary;
 
-                // Бейдж модели
-                const sourceLabels = { 'groq': 'Groq', 'local': 'Локальный' };
-                document.getElementById('model-badge').innerText = sourceLabels[data.meta?.source] || 'Авто';
+                const labels = { 'groq': 'Groq', 'local': 'Локальный' };
+                document.getElementById('model-badge').innerText = labels[data.meta?.source] || 'Авто';
 
-                // Рейтинг
                 const score = data.meta?.score ?? 100;
-                const scoreEl = document.getElementById('score-value');
-                const barEl = document.getElementById('score-bar');
-                const sectionEl = document.getElementById('score-section');
-                scoreEl.textContent = `${score}/100`;
-                barEl.style.width = `${score}%`;
-                barEl.className = 'score-bar rounded-full ' + 
-                    (score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500');
-                sectionEl.classList.remove('hidden');
+                document.getElementById('score-value').textContent = `${score}/100`;
+                const bar = document.getElementById('score-bar');
+                bar.style.width = `${score}%`;
+                bar.className = `score-bar rounded-full ${score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`;
+                document.getElementById('score-section').classList.remove('hidden');
 
-                // Риски
                 const issuesList = document.getElementById('issues-list');
                 issuesList.innerHTML = '';
 
                 if (data.issues?.length > 0) {
                     data.issues.forEach(issue => {
-                        let bgClass, borderClass, textColor, badgeColor;
-                        switch (issue.risk) {
-                            case 'high':
-                                bgClass = 'bg-red-100 dark:bg-red-900/30';
-                                borderClass = 'border-l-4 border-red-500';
-                                textColor = 'text-red-800 dark:text-red-200';
-                                badgeColor = 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200';
-                                break;
-                            case 'medium':
-                                bgClass = 'bg-orange-100 dark:bg-orange-900/30';
-                                borderClass = 'border-l-4 border-orange-500';
-                                textColor = 'text-orange-800 dark:text-orange-200';
-                                badgeColor = 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200';
-                                break;
-                            default:
-                                bgClass = 'bg-green-100 dark:bg-green-900/30';
-                                borderClass = 'border-l-4 border-green-500';
-                                textColor = 'text-green-800 dark:text-green-200';
-                                badgeColor = 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200';
-                        }
-
-                        const riskLabel = issue.risk === 'high' ? 'Опасно' : issue.risk === 'medium' ? 'Спорно' : 'Нейтрально';
+                        const colors = {
+                            high: { bg: 'bg-red-100 dark:bg-red-900/30', border: 'border-red-500', text: 'text-red-800 dark:text-red-200', badge: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200', label: 'Опасно' },
+                            medium: { bg: 'bg-orange-100 dark:bg-orange-900/30', border: 'border-orange-500', text: 'text-orange-800 dark:text-orange-200', badge: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200', label: 'Спорно' },
+                            low: { bg: 'bg-green-100 dark:bg-green-900/30', border: 'border-green-500', text: 'text-green-800 dark:text-green-200', badge: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200', label: 'Нейтрально' }
+                        };
+                        const c = colors[issue.risk] || colors.low;
+                        
                         const card = document.createElement('div');
-                        card.className = `p-4 mb-4 rounded-lg ${bgClass} ${borderClass}`;
+                        card.className = `p-4 mb-4 rounded-lg ${c.bg} border-l-4 ${c.border}`;
                         card.innerHTML = `
                             <div class="flex items-start">
-                                <span class="px-2 py-1 text-xs font-bold rounded mr-2 ${badgeColor}">${escapeHtml(riskLabel)}</span>
+                                <span class="px-2 py-1 text-xs font-bold rounded mr-2 ${c.badge}">${c.label}</span>
                                 <div class="flex-1">
-                                    <p class="font-medium mb-2 ${textColor}">«${escapeHtml(issue.quote)}»</p>
+                                    <p class="font-medium mb-2 ${c.text}">«${escapeHtml(issue.quote)}»</p>
                                     <p class="text-gray-700 dark:text-gray-300 mb-3">${escapeHtml(issue.explanation)}</p>
-                                    ${issue.suggestion ? `
-                                        <div class="flex items-start">
-                                            <span class="mt-0.5 text-blue-700 dark:text-blue-400 mr-2">➤</span>
-                                            <code class="bg-gray-100 dark:bg-gray-700 text-sm p-2 rounded break-all flex-1">${escapeHtml(issue.suggestion)}</code>
-                                            <button class="ml-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400" onclick="copyText(this)">📋</button>
-                                        </div>
-                                    ` : ''}
+                                    ${issue.suggestion ? `<div class="flex items-start"><span class="mt-0.5 text-blue-700 dark:text-blue-400 mr-2">➤</span><code class="bg-gray-100 dark:bg-gray-700 text-sm p-2 rounded break-all flex-1">${escapeHtml(issue.suggestion)}</code><button class="ml-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400" onclick="copyText(this)">📋</button></div>` : ''}
                                 </div>
                             </div>
                         `;
                         issuesList.appendChild(card);
                     });
                 } else {
-                    issuesList.innerHTML = `
-                        <div class="bg-green-100 dark:bg-green-900/30 border-l-4 border-green-500 p-4 rounded-lg">
-                            <p class="text-green-800 dark:text-green-200 font-medium">✅ Договор безопасен</p>
-                            <p class="text-sm mt-1">Критических рисков не найдено.</p>
-                        </div>
-                    `;
+                    issuesList.innerHTML = `<div class="bg-green-100 dark:bg-green-900/30 border-l-4 border-green-500 p-4 rounded-lg"><p class="text-green-800 dark:text-green-200 font-medium">✅ Договор безопасен</p></div>`;
                 }
             } catch (e) {
-                console.error("Ошибка:", e);
+                console.error(e);
                 document.getElementById('spinner').classList.add('hidden');
                 document.getElementById('upload-area').classList.remove('hidden');
-                alert('Ошибка сети: ' + (e.message || 'Неизвестно'));
+                alert('Ошибка сети: ' + e.message);
             }
         }
 
-        // ФУНКЦИЯ СКАЧИВАНИЯ PDF 
         function downloadPDF() {
-            if (!analysisResult) {
-                alert('Нет данных для генерации PDF. Сначала загрузите и проанализируйте договор.');
-                return;
-            }
+            if (!analysisResult) return;
+            fetch('/download-pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(analysisResult) })
+                .then(r => r.blob()).then(blob => {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'analiz_dogovora.pdf';
+                    a.click();
+                });
+        }
 
-            fetch('/download-pdf', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(analysisResult)
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.blob();
-                }
-                return response.text().then(text => { throw new Error(text || 'Ошибка при генерации PDF'); });
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'analiz_dogovora.pdf';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-            })
-            .catch(err => {
-                console.error('Ошибка PDF:', err);
-                alert('Не удалось скачать PDF: ' + (err.message || 'Неизвестная ошибка'));
-            });
+        function downloadFixedDocx() {
+            if (!analysisResult) return;
+            fetch('/download-fixed-docx', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ original_text: analysisResult.original_text, issues: analysisResult.issues }) })
+                .then(r => r.blob()).then(blob => {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'ispravlennyy_dogovor.docx';
+                    a.click();
+                });
         }
 
         // Drag & drop
         const uploadArea = document.getElementById('upload-area');
-        ['dragover', 'dragenter'].forEach(ev => {
-            uploadArea.addEventListener(ev, e => {
-                e.preventDefault();
-                uploadArea.classList.add('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/10');
-            });
-        });
-        ['dragleave', 'dragend'].forEach(ev => {
-            uploadArea.addEventListener(ev, () => {
-                uploadArea.classList.remove('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/10');
-            });
-        });
+        ['dragover', 'dragenter'].forEach(ev => uploadArea.addEventListener(ev, e => { e.preventDefault(); uploadArea.classList.add('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/10'); }));
+        ['dragleave', 'dragend'].forEach(ev => uploadArea.addEventListener(ev, () => uploadArea.classList.remove('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/10')));
         uploadArea.addEventListener('drop', e => {
             e.preventDefault();
             uploadArea.classList.remove('border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/10');
             const files = e.dataTransfer.files;
-            if (files.length) {
-                document.getElementById('file-input').files = files;
-                uploadFile();
-            }
+            if (files.length) { document.getElementById('file-input').files = files; uploadFile(); }
         });
     </script>
 </body>
